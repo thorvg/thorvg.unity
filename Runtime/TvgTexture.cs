@@ -126,7 +126,8 @@ namespace Tvg
             __disposed = true;
         }
 
-        public void Resize(int w, int h) {
+        public void Resize(int w, int h)
+        {
             width = w;
             height = h;
 
@@ -162,8 +163,9 @@ namespace Tvg
 
         public float frame {
             get => __frame;
-            set {
-                if (value == __frame) return;
+            set
+            {
+                if (value == __frame || totalFrames <= 1) return;
 
                 // Wrap the frame value
                 __frame = ((value % totalFrames) + totalFrames) % totalFrames;
@@ -175,7 +177,8 @@ namespace Tvg
             }
         }
 
-        public Texture2D Texture() {
+        public Texture2D Texture()
+        {
             if (!__isDirty) return __texture;
 
             // Draw the canvas

@@ -49,7 +49,7 @@ meson setup build -Dbindings=capi -Dloaders="lottie,svg,png,jpg,webp" -Dthreads=
 meson compile -C build
 ```
 
-Afterwards, copy the the [Plugins](Plugins) folder
+Afterwards, copy the [Plugins](Plugins) folder
 
 ## Communication
 
