@@ -22,7 +22,7 @@
   "license": "MIT",
   "licensesUrl": "https://github.com/thorvg/thorvg.unity/blob/main/LICENSE",
   "documentationUrl": "https://github.com/thorvg/thorvg.unity#readme",
-  "changelogUrl": "https://github.com/thorvg/thorvg.unity/releases",
+  "changelogUrl": "https://github.com/thorvg/thorvg.unity/blob/main/CHANGELOG.md",
   "type": "library",
   "hideInEditor": false,
   "samples": [
