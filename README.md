@@ -51,10 +51,6 @@ meson compile -C build
 
 Afterwards, copy the the [Plugins](Plugins) folder
 
-## License
-
-See [LICENSE](LICENSE) file for details.
-
 ## Communication
 
 For real-time conversations and discussions, please join us on [Discord](https://discord.gg/n25xj6J6HM)
