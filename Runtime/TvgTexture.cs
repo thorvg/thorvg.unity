@@ -131,7 +131,8 @@ namespace Tvg
             __isDirty = true;
         }
 
-        public float frame {
+        public float frame
+        {
             get => __frame;
             set
             {
