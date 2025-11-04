@@ -1,0 +1,35 @@
+{
+  "name": "com.thorvg.unity",
+  "displayName": "ThorVG",
+  "version": "0.1.0",
+  "unity": "2021.3",
+  "description": "ThorVG vector graphics library integration for Unity. Enables high-performance rendering of Lottie animations and SVG vector graphics with native platform support.",
+  "keywords": [
+    "thorvg",
+    "lottie",
+    "svg",
+    "vector",
+    "graphics",
+    "animation",
+    "2d"
+  ],
+  "category": "2D",
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thorvg/thorvg.unity.git"
+  },
+  "license": "MIT",
+  "licensesUrl": "https://github.com/thorvg/thorvg.unity/blob/main/LICENSE",
+  "documentationUrl": "https://github.com/thorvg/thorvg.unity#readme",
+  "changelogUrl": "https://github.com/thorvg/thorvg.unity/releases",
+  "type": "library",
+  "hideInEditor": false,
+  "samples": [
+    {
+      "displayName": "Basic Example",
+      "description": "Simple example showing how to play a Lottie animation",
+      "path": "Samples~/Basic"
+    }
+  ]
+}
