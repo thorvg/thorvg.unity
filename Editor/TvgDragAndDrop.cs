@@ -78,20 +78,11 @@ namespace Tvg.Editor
             // Create a new GameObject
             GameObject go = new GameObject(asset.name);
             
-            // Position it in the scene
-            if (sceneView != null)
-            {
-                // Place at scene view focus point
-                go.transform.position = sceneView.pivot;
-            }
-            else
-            {
-                // Place at world origin
-                go.transform.position = Vector3.zero;
-            }
+            // Place at scene view focus point or world origin
+            go.transform.position = sceneView != null ? sceneView.pivot : Vector3.zero;
 
             // Add SpriteRenderer (required by TvgPlayer)
-            SpriteRenderer spriteRenderer = go.AddComponent<SpriteRenderer>();
+            go.AddComponent<SpriteRenderer>();
 
             // Add TvgPlayer component
             TvgPlayer player = go.AddComponent<TvgPlayer>();

@@ -19,24 +19,24 @@ namespace Tvg.Editor
         [Header("Sprite Settings")]
         [SerializeField]
         [Tooltip("Render scale factor")]
-        private float scale = 1.0f;
+        private readonly float scale = 1.0f;
 
         [SerializeField]
         [Tooltip("Pixels per unit for the sprite (affects size in world space)")]
-        private float pixelsPerUnit = 100.0f;
+        private readonly float pixelsPerUnit = 100.0f;
 
         [SerializeField]
         [Tooltip("Pivot point of the sprite")]
-        private Vector2 pivot = new Vector2(0.5f, 0.5f);
+        private readonly Vector2 pivot = new Vector2(0.5f, 0.5f);
 
         [SerializeField]
         [Tooltip("Sprite mesh type")]
-        private SpriteMeshType meshType = SpriteMeshType.Tight;
+        private readonly SpriteMeshType meshType = SpriteMeshType.Tight;
 
         [SerializeField]
         [Range(0, 32)]
         [Tooltip("Extrude edges for sprite mesh")]
-        private uint extrudeEdges = 1;
+        private readonly uint extrudeEdges = 1;
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
@@ -75,7 +75,7 @@ namespace Tvg.Editor
                     int width = tvgTexture.width;
                     int height = tvgTexture.height;
 
-                    if (scale != 1.0f)
+                    if (Mathf.Abs(scale - 1.0f) > 1e-6f)
                     {
                         width = (int)(width * scale);
                         height = (int)(height * scale);

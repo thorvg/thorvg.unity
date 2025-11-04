@@ -32,37 +32,21 @@ namespace Tvg
             TvgSys.Init();
 
             // Create the canvas and animation
-            __canvas = TvgLib.tvg_swcanvas_create(TvgLib.EngineOption.None);
-            __animation = TvgLib.tvg_animation_new();
-            __picture = TvgLib.tvg_animation_get_picture(__animation);
+            __canvas = TvgLib.CanvasCreate();
+            __animation = TvgLib.AnimationCreate();
+            __picture = TvgLib.AnimationGetPicture(__animation);
 
             // Load the animation data
-            TvgSys.Check(
-                TvgLib.tvg_picture_load_data(__picture, data, (uint)data.Length, "", "", true),
-                "Failed to load animation data");
-
-            TvgSys.Check(
-                TvgLib.tvg_canvas_push(__canvas, __picture),
-                "Failed to push picture to canvas");
+            TvgLib.PictureLoad(__picture, data);
+            TvgLib.CanvasPush(__canvas, __picture);
 
             // Position the picture
             // Unity is Y-up, but ThorVG is Y-down
-            TvgSys.Check(
-                TvgLib.tvg_picture_set_origin(__picture, 0, 1),
-                "Failed to set picture origin");
+            TvgLib.PictureSetOrigin(__picture, 0, 1);
 
             // Get the animation info
-            TvgSys.Check(
-                TvgLib.tvg_picture_get_size(__picture, out float w, out float h),
-                "Failed to get picture size");
-
-            TvgSys.Check(
-                TvgLib.tvg_animation_get_duration(__animation, out float d),
-                "Failed to get animation duration");
-
-            TvgSys.Check(
-                TvgLib.tvg_animation_get_total_frame(__animation, out float t),
-                "Failed to get animation total frame");
+            TvgLib.PictureGetSize(__picture, out float w, out float h);
+            TvgLib.AnimationGetInfo(__animation, out float t, out float d);
 
             width = (int)w;
             height = (int)h;
@@ -91,30 +75,26 @@ namespace Tvg
             if (__disposed)
                 return;
 
-            if (disposing)
+            if (disposing && __texture != null)
             {
                 // Clean up Unity managed resources (only on main thread)
-                if (__texture != null)
-                {
-                    // Use DestroyImmediate in edit mode, Destroy at runtime
-                    if (Application.isPlaying)
-                        UnityEngine.Object.Destroy(__texture);
-                    else
-                        UnityEngine.Object.DestroyImmediate(__texture);
-                    
-                    __texture = null;
-                }
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(__texture);
+                else
+                    UnityEngine.Object.DestroyImmediate(__texture);
+                
+                __texture = null;
             }
 
             // Clean up native ThorVG resources (safe from any thread)
             if (__animation != IntPtr.Zero)
             {
-                TvgLib.tvg_animation_del(__animation);
+                TvgLib.AnimationDestroy(__animation);
             }
 
             if (__canvas != IntPtr.Zero)
             {
-                TvgLib.tvg_canvas_destroy(__canvas);
+                TvgLib.CanvasDestroy(__canvas);
             }
 
             // Free the GCHandle
@@ -132,9 +112,7 @@ namespace Tvg
             height = h;
 
             // Set the picture size
-            TvgSys.Check(
-                TvgLib.tvg_picture_set_size(__picture, width, -height),
-                "Failed to set picture size");
+            TvgLib.PictureSetSize(__picture, width, -height);
 
             // Free the buffer
             if (__bufferHandle.IsAllocated)
@@ -148,15 +126,7 @@ namespace Tvg
             __texture.Reinitialize(width, height);
 
             // Set the target
-            TvgSys.Check(
-                TvgLib.tvg_swcanvas_set_target(
-                    __canvas,
-                    __bufferHandle.AddrOfPinnedObject(),
-                    (uint)width,
-                    (uint)width,
-                    (uint)height,
-                    TvgLib.ColorSpace.Abgr8888),
-                "Failed to set target");
+            TvgLib.CanvasSetTarget(__canvas, __bufferHandle.AddrOfPinnedObject(), width, height);
 
             __isDirty = true;
         }
@@ -165,14 +135,14 @@ namespace Tvg
             get => __frame;
             set
             {
-                if (value == __frame || totalFrames <= 1) return;
+                if (Mathf.Abs(value - __frame) < 1e-6f) return;
+                __frame = value;
 
                 // Wrap the frame value
-                __frame = ((value % totalFrames) + totalFrames) % totalFrames;
+                if (totalFrames <= 1) return;
+                float wrappedFrame = ((__frame % totalFrames) + totalFrames) % totalFrames;
 
-                TvgSys.Check(
-                    TvgLib.tvg_animation_set_frame(__animation, __frame),
-                    "Failed to set animation frame");
+                TvgLib.AnimationSetFrame(__animation, wrappedFrame);
                 __isDirty = true;
             }
         }
@@ -182,18 +152,7 @@ namespace Tvg
             if (!__isDirty) return __texture;
 
             // Draw the canvas
-            TvgSys.Check(
-                TvgLib.tvg_canvas_update(__canvas),
-                "Failed to update canvas");
-
-            TvgSys.Check(
-                TvgLib.tvg_canvas_draw(__canvas, true),
-                "Failed to draw canvas");
-
-            TvgSys.Check(
-                TvgLib.tvg_canvas_sync(__canvas),
-                "Failed to sync canvas");
-
+            TvgLib.CanvasDraw(__canvas, true);
 
             // Update the texture
             __texture.SetPixelData(__buffer, 0);
