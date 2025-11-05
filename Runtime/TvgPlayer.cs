@@ -5,7 +5,8 @@ using Tvg.Sys;
 
 namespace Tvg
 {
-    [RequireComponent(typeof(SpriteRenderer))]
+    [RequireComponent(typeof(MeshRenderer))]
+    [RequireComponent(typeof(MeshFilter))]
     public class TvgPlayer : MonoBehaviour
     {   
         [SerializeField] 
@@ -17,8 +18,8 @@ namespace Tvg
         private float speed = 1.0f;
 
         private TvgTexture __texture;
-        private SpriteRenderer __spriteRenderer;
-        private Sprite __currentSprite;
+        private MeshRenderer __meshRenderer;
+        private Material __material;
         private bool __loaded;
         private bool __isAnimated;
         private bool __needsReload;
@@ -67,14 +68,14 @@ namespace Tvg
             __loaded = false;
             __needsReload = false;
 
-            // Ensure sprite renderer is assigned
-            if (__spriteRenderer == null)
-                __spriteRenderer = GetComponent<SpriteRenderer>();
+            // Ensure mesh renderer is assigned
+            if (__meshRenderer == null)
+                __meshRenderer = GetComponent<MeshRenderer>();
 
             if (source == null)
             {
-                if (__spriteRenderer != null)
-                    __spriteRenderer.sprite = null;
+                if (__material != null)
+                    __material.mainTexture = null;
                 return;
             }
 
@@ -83,8 +84,8 @@ namespace Tvg
             
             if (string.IsNullOrEmpty(dataString))
             {
-                if (__spriteRenderer != null)
-                    __spriteRenderer.sprite = null;
+                if (__material != null)
+                    __material.mainTexture = null;
                 return;
             }
 
@@ -93,7 +94,9 @@ namespace Tvg
                 // Load the texture - ThorVG automatically detects if it's SVG or Lottie
                 __texture = new TvgTexture(dataString);
                 __isAnimated = __texture.totalFrames > 1;
-                UpdateSprite();
+                
+                // Create mesh and material
+                SetupMeshAndMaterial();
                 
                 // Set the flag
                 __loaded = true;
@@ -107,17 +110,17 @@ namespace Tvg
 
         private void Cleanup()
         {
-            // Clean up old sprite (use appropriate destroy method)
-            if (__currentSprite != null)
+            // Clean up material
+            if (__material != null)
             {
                 if (Application.isPlaying)
-                    Destroy(__currentSprite);
+                    Destroy(__material);
                 else
-                    DestroyImmediate(__currentSprite);
-                __currentSprite = null;
+                    DestroyImmediate(__material);
+                __material = null;
             }
 
-            // Clean up old texture
+            // Clean up texture
             if (__texture != null)
             {
                 __texture.Dispose();
@@ -127,24 +130,53 @@ namespace Tvg
             __loaded = false;
         }
 
-        private void UpdateSprite()
+        private Mesh CreateQuadMesh(float width, float height)
         {
-            // Destroy old sprite if it exists (use appropriate method)
-            if (__currentSprite != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(__currentSprite);
-                else
-                    DestroyImmediate(__currentSprite);
-            }
-
-            // Create and assign new sprite
-            __currentSprite = Sprite.Create(
-                __texture.Texture(),
-                new Rect(0, 0, __texture.width, __texture.height),
-                new Vector2(0.5f, 0.5f));
+            var mesh = new Mesh();
             
-            __spriteRenderer.sprite = __currentSprite;
+            // Vertices (centered quad)
+            float halfW = width * 0.5f;
+            float halfH = height * 0.5f;
+            mesh.vertices = new Vector3[]
+            {
+                new Vector3(-halfW, -halfH, 0),
+                new Vector3(halfW, -halfH, 0),
+                new Vector3(-halfW, halfH, 0),
+                new Vector3(halfW, halfH, 0)
+            };
+            
+            // UVs
+            mesh.uv = new Vector2[]
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(0, 1),
+                new Vector2(1, 1)
+            };
+            
+            // Triangles
+            mesh.triangles = new int[] { 0, 2, 1, 2, 3, 1 };
+            
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            
+            return mesh;
+        }
+
+        private void SetupMeshAndMaterial()
+        {
+            // Setup mesh
+            var meshFilter = GetComponent<MeshFilter>();
+            if (meshFilter.sharedMesh == null)
+            {
+                // Create quad mesh sized to texture (in world units, 1 pixel = 0.01 units)
+                meshFilter.mesh = CreateQuadMesh(__texture.width * 0.01f, __texture.height * 0.01f);
+            }
+            
+            // Create material with unlit transparent shader
+            __material = new Material(Shader.Find("Unlit/Transparent"));
+            __material.mainTexture = __texture.Texture();
+            __meshRenderer.material = __material;
         }
 
         private void Play()
@@ -153,8 +185,10 @@ namespace Tvg
             if (!__isAnimated) return;
             if (Mathf.Approximately(speed, 0.0f)) return;
 
+            // Update the frame
             __texture.frame += Time.deltaTime * __texture.fps * speed;
-            UpdateSprite();
+            
+            __texture.Texture();
         }
 
         private void Update()
