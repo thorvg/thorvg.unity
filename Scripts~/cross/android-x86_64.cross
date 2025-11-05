@@ -1,0 +1,29 @@
+# Android x86_64 cross-compilation file (for emulators)
+
+[constants]
+ndk_root = '/opt/homebrew/Caskroom/android-ndk/29/AndroidNDK14206865.app/Contents/NDK'
+toolchain = ndk_root + '/toolchains/llvm/prebuilt/darwin-x86_64'
+api_level = '24'
+
+[binaries]
+cpp     = toolchain + '/bin/x86_64-linux-android' + api_level + '-clang++'
+c       = toolchain + '/bin/x86_64-linux-android' + api_level + '-clang'
+ar      = toolchain + '/bin/llvm-ar'
+as      = toolchain + '/bin/llvm-as'
+ranlib  = toolchain + '/bin/llvm-ranlib'
+ld      = toolchain + '/bin/ld'
+strip   = toolchain + '/bin/llvm-strip'
+
+[properties]
+sys_root = toolchain + '/sysroot'
+
+[built-in options]
+cpp_link_args = ['-static-libstdc++']
+c_link_args = []
+
+[host_machine]
+system = 'android'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'
+

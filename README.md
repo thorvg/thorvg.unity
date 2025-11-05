@@ -36,6 +36,8 @@ https://github.com/thorvg/thorvg.unity.git
 - ✅ macOS (Apple Silicon)
 - ✅ Linux (x64)
 - ✅ WebGL
+- ✅ Android (armv7a, arm64-v8, x64)
+- ✅ iOS (arm64)
 
 ## Requirements
 
@@ -44,10 +46,8 @@ https://github.com/thorvg/thorvg.unity.git
 ## Building ThorVG
 
 ```bash
-git clone https://github.com/thorvg/thorvg.git
-cd thorvg
-meson setup build -Dbindings=capi -Dloaders="lottie,svg,png,jpg,webp" -Dthreads=false -Dfile=false -Dpartial=false -Dextra= -Dbuildtype=release
-meson compile -C build
+cd Scripts~
+python3 build-thorvg.py
 ```
 
 Afterwards, copy the [Plugins](Plugins) folder

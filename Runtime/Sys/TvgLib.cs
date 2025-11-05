@@ -23,7 +23,7 @@ namespace Tvg.Sys
             public IntPtr Picture;
 #endif
         }
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if (UNITY_WEBGL || UNITY_IOS) && !UNITY_EDITOR
         private const string DLL_NAME = "__Internal";
 #else
         private const string DLL_NAME = "libthorvg";
