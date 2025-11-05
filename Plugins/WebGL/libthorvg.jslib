@@ -20,10 +20,10 @@ var ThorVGPlugin = {
         
         var script = document.createElement('script');
         script.type = 'module';
-        // CDN URL: Change version here if needed
+        // Load from package StreamingAssets (copied during build)
         script.textContent = `(async () => {
             try {
-                const ThorVGModule = await import('https://unpkg.com/@thorvg/lottie-player@1.0.0-pre.31/dist/sw-lite/thorvg.js');
+                const ThorVGModule = await import('./StreamingAssets/Packages/com.thorvg.unity/WebGL/thorvg.js');
                 const module = await ThorVGModule.default();
                 module.init();
                 window.$ThorVGModule = module;
