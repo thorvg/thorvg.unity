@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
+using Tvg.Sys;
 
 namespace Tvg
 {
@@ -23,7 +25,19 @@ namespace Tvg
 
         private void Start()
         {
-            // Load the initial content
+            // Wait for ThorVG to be ready (important for WebGL)
+            StartCoroutine(InitializeWhenReady());
+        }
+        
+        private IEnumerator InitializeWhenReady()
+        {
+            // Wait for ThorVG module to load (WebGL only, instant on native)
+            while (!TvgSys.IsReady())
+            {
+                yield return null;
+            }
+            
+            // Now safe to load content
             LoadSource();
         }
 

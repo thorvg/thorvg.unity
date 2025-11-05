@@ -7,10 +7,8 @@ namespace Tvg
 {
     public class TvgTexture : IDisposable
     {
-        // Tvg Handles
-        private readonly IntPtr __canvas;
-        private readonly IntPtr __animation;
-        private readonly IntPtr __picture;
+        // Unified animation handle (works for both WebGL and Native)
+        private TvgLib.AnimationHandle __handle;
 
         // Texture Data
         private uint[] __buffer;
@@ -31,23 +29,14 @@ namespace Tvg
         {
             TvgSys.Init();
 
-            // Create the canvas and animation
-            __canvas = TvgLib.CanvasCreate();
-            __animation = TvgLib.AnimationCreate();
-            __picture = TvgLib.AnimationGetPicture(__animation);
-
-            // Load the animation data
-            TvgLib.PictureLoad(__picture, data);
-            TvgLib.CanvasPush(__canvas, __picture);
-
-            // Position the picture
-            // Unity is Y-up, but ThorVG is Y-down
-            TvgLib.PictureSetOrigin(__picture, 0, 1);
+            // Create animation (works for both WebGL and Native)
+            __handle = TvgLib.CreateAnimation(data);
 
             // Get the animation info
-            TvgLib.PictureGetSize(__picture, out float w, out float h);
-            TvgLib.AnimationGetInfo(__animation, out float t, out float d);
-
+            TvgLib.GetSize(__handle, out float w, out float h);
+            TvgLib.GetDuration(__handle, out float d);
+            TvgLib.GetTotalFrame(__handle, out float t);
+            
             width = (int)w;
             height = (int)h;
             duration = d;
@@ -87,15 +76,7 @@ namespace Tvg
             }
 
             // Clean up native ThorVG resources (safe from any thread)
-            if (__animation != IntPtr.Zero)
-            {
-                TvgLib.AnimationDestroy(__animation);
-            }
-
-            if (__canvas != IntPtr.Zero)
-            {
-                TvgLib.CanvasDestroy(__canvas);
-            }
+            TvgLib.DestroyAnimation(__handle);
 
             // Free the GCHandle
             if (__bufferHandle.IsAllocated)
@@ -111,8 +92,8 @@ namespace Tvg
             width = w;
             height = h;
 
-            // Set the picture size
-            TvgLib.PictureSetSize(__picture, width, -height);
+            // Resize animation
+            TvgLib.Resize(__handle, width, height);
 
             // Free the buffer
             if (__bufferHandle.IsAllocated)
@@ -126,7 +107,7 @@ namespace Tvg
             __texture.Reinitialize(width, height);
 
             // Set the target
-            TvgLib.CanvasSetTarget(__canvas, __bufferHandle.AddrOfPinnedObject(), width, height);
+            TvgLib.SetCanvasTarget(ref __handle, __bufferHandle.AddrOfPinnedObject(), width, height);
 
             __isDirty = true;
         }
@@ -143,7 +124,7 @@ namespace Tvg
                 if (totalFrames <= 1) return;
                 float wrappedFrame = ((__frame % totalFrames) + totalFrames) % totalFrames;
 
-                TvgLib.AnimationSetFrame(__animation, wrappedFrame);
+                TvgLib.SetFrame(__handle, wrappedFrame);
                 __isDirty = true;
             }
         }
@@ -153,7 +134,7 @@ namespace Tvg
             if (!__isDirty) return __texture;
 
             // Draw the canvas
-            TvgLib.CanvasDraw(__canvas, true);
+            TvgLib.DrawCanvas(__handle);
 
             // Update the texture
             __texture.SetPixelData(__buffer, 0);

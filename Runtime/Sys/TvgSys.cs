@@ -7,6 +7,22 @@ namespace Tvg.Sys
     {
         public static bool Initialized { get; private set; }
         
+        /// <summary>
+        /// Check if ThorVG is ready to use (important for WebGL)
+        /// </summary>
+        /// <returns>True if ready, false if still loading</returns>
+        public static bool IsReady()
+        {
+            if (!Initialized) return false;
+            
+            int status = TvgLib.IsReady();
+            if (status < 0)
+            {
+                throw new Exception("ThorVG failed to load");
+            }
+            return status > 0;
+        }
+        
         public static void Init()
         {
             if (Initialized) return;

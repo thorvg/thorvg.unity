@@ -35,6 +35,7 @@ https://github.com/thorvg/thorvg.unity.git
 - ✅ Windows (x64)
 - ✅ macOS (Apple Silicon)
 - ✅ Linux (x64)
+- ✅ WebGL
 
 ## Requirements
 

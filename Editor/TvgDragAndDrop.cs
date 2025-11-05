@@ -102,8 +102,6 @@ namespace Tvg.Editor
 
             // Select the new object
             Selection.activeGameObject = go;
-
-            Debug.Log($"Created TvgPlayer for: {asset.name}");
         }
     }
 }
