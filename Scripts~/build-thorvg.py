@@ -85,14 +85,14 @@ def check_dependencies(need_emsdk=False):
         # Install and activate Emscripten 4.0.0
         emsdk_script = "emsdk.bat" if platform.system() == "Windows" else "./emsdk"
         print("Installing Emscripten 4.0.0...")
-        run_command([emsdk_script, "install", "4.0.0"], cwd=emsdk_dir)
-        run_command([emsdk_script, "activate", "4.0.0"], cwd=emsdk_dir)
+        run_command([emsdk_script, "install", "4.0.0"], cwd=emsdk_dir, shell=True)
+        run_command([emsdk_script, "activate", "4.0.0"], cwd=emsdk_dir, shell=True)
         print("✅ Emscripten 4.0.0 activated")
 
-def run_command(cmd, cwd=None):
+def run_command(cmd, cwd=None, shell=False):
     """Run a command and print output"""
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=cwd, capture_output=False, text=True)
+    result = subprocess.run(cmd, cwd=cwd, capture_output=False, text=True, shell=shell)
     if result.returncode != 0:
         print(f"Error: Command failed with code {result.returncode}")
         sys.exit(1)
@@ -103,6 +103,7 @@ def find_android_ndk():
         # Environment variables (check first)
         Path(os.environ.get("ANDROID_NDK_HOME", "")) if os.environ.get("ANDROID_NDK_HOME") else None,
         Path(os.environ.get("ANDROID_NDK", "")) if os.environ.get("ANDROID_NDK") else None,
+        Path(os.environ.get("ANDROID_HOME", "")) / "ndk" if os.environ.get("ANDROID_HOME") else None,
         # Homebrew (macOS) - direct install
         Path("/opt/homebrew/share/android-ndk"),
         Path("/usr/local/share/android-ndk"),
@@ -171,11 +172,14 @@ def create_android_cross_file(arch, ndk_path, api_level=24):
     
     compiler_prefix, cpu_family, cpu = arch_map[arch]
     
+    # Add .cmd suffix for Windows
+    ext = ".cmd" if platform.system() == "Windows" else ""
+    
     content = f"""# Auto-generated Android {arch} cross-file
 
 [binaries]
-cpp     = '{toolchain}/bin/{compiler_prefix}{api_level}-clang++'
-c       = '{toolchain}/bin/{compiler_prefix}{api_level}-clang'
+cpp     = '{toolchain}/bin/{compiler_prefix}{api_level}-clang++{ext}'
+c       = '{toolchain}/bin/{compiler_prefix}{api_level}-clang{ext}'
 ar      = '{toolchain}/bin/llvm-ar'
 as      = '{toolchain}/bin/llvm-as'
 ranlib  = '{toolchain}/bin/llvm-ranlib'
@@ -423,7 +427,7 @@ def main():
         target = sys.argv[1].lower()
 
     # Check dependencies (with emsdk for WASM builds)
-    need_emsdk = target in ["wasm", "webgl", "all"]
+    need_emsdk = target in ["wasm", "webgl", "web", "all"]
     check_dependencies(need_emsdk=need_emsdk)
     
     # Build based on target
@@ -433,7 +437,7 @@ def main():
         build_ios()
     elif target == "android":
         build_android()
-    elif target == "wasm" or target == "webgl":
+    elif target == "wasm" or target == "webgl" or target == "web":
         build_wasm()
     elif target == "all":
         build_desktop()
