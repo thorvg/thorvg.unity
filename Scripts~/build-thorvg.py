@@ -244,7 +244,8 @@ def build_desktop():
     """Build for current desktop platform (macOS, Windows, Linux)"""
     print("\n=== Building for Desktop ===")
     
-    build_dir = Path("build/desktop")
+    system = platform.system()
+    build_dir = Path(f"build/desktop-{system}")
     
     # Setup
     run_command(["meson", "setup", str(build_dir), str(THORVG_DIR)] + COMMON_OPTIONS + ["--wipe"])
@@ -253,7 +254,6 @@ def build_desktop():
     run_command(["meson", "compile", "-C", str(build_dir)])
     
     # Copy to appropriate plugin folder
-    system = platform.system()
     if system == "Darwin":
         # macOS
         output_dir = UNITY_PLUGINS / "macOS"
@@ -266,7 +266,7 @@ def build_desktop():
         # Windows
         output_dir = UNITY_PLUGINS / "x86_64"
         output_file = "libthorvg.dll"
-        source = build_dir / "src" / output_file
+        source = build_dir / "src" / "thorvg-1.dll"
     else:
         # Linux
         output_dir = UNITY_PLUGINS / "x86_64"
