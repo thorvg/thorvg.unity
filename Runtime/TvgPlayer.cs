@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Tvg.Sys;
 
 namespace Tvg
@@ -8,14 +9,18 @@ namespace Tvg
     [RequireComponent(typeof(MeshRenderer))]
     [RequireComponent(typeof(MeshFilter))]
     public class TvgPlayer : MonoBehaviour
-    {   
-        [SerializeField] 
+    {
+        [SerializeField]
         [Tooltip("Drag and drop a Lottie .json file here")]
         private TextAsset source;
         
-        [SerializeField] 
+        [SerializeField]
+        [Tooltip("Starting frame of the animation")]
+        private float _frame = 0.0f;
+        
+        [SerializeField]
         [Tooltip("Animation playback speed multiplier")]
-        private float speed = 1.0f;
+        private float _speed = 1.0f;
 
         private TvgTexture __texture;
         private MeshRenderer __meshRenderer;
@@ -23,6 +28,24 @@ namespace Tvg
         private bool __loaded;
         private bool __isAnimated;
         private bool __needsReload;
+
+        public float frame
+        {
+            get => __texture?.frame ?? _frame;
+            set
+            {
+                if (__texture != null)
+                    __texture.frame = value;
+                else
+                    _frame = value;
+            }
+        }
+
+        public float speed
+        {
+            get => _speed;
+            set => _speed = value;
+        }
 
         private void Start()
         {
@@ -94,6 +117,7 @@ namespace Tvg
                 // Load the texture - ThorVG automatically detects if it's SVG or Lottie
                 __texture = new TvgTexture(dataString);
                 __isAnimated = __texture.totalFrames > 1;
+                __texture.frame = _frame;
                 
                 // Create mesh and material
                 SetupMeshAndMaterial();
