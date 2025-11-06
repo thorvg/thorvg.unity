@@ -1,6 +1,6 @@
 # ThorVG Unity
 
-High-performance vector graphics library for Unity, enabling Lottie animations and SVG rendering.
+ThorVG Unity supports Lottie animations, enabling seamless integration of vector-based animations in Unity projects.
 
 ## Installation
 
