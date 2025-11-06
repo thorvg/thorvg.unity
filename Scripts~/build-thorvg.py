@@ -85,14 +85,14 @@ def check_dependencies(need_emsdk=False):
         # Install and activate Emscripten 4.0.0
         emsdk_script = "emsdk.bat" if platform.system() == "Windows" else "./emsdk"
         print("Installing Emscripten 4.0.0...")
-        run_command([emsdk_script, "install", "4.0.0"], cwd=emsdk_dir, shell=True)
-        run_command([emsdk_script, "activate", "4.0.0"], cwd=emsdk_dir, shell=True)
+        run_command([emsdk_script, "install", "4.0.0"], cwd=emsdk_dir)
+        run_command([emsdk_script, "activate", "4.0.0"], cwd=emsdk_dir)
         print("✅ Emscripten 4.0.0 activated")
 
-def run_command(cmd, cwd=None, shell=False):
+def run_command(cmd, cwd=None):
     """Run a command and print output"""
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=cwd, capture_output=False, text=True, shell=shell)
+    result = subprocess.run(cmd, cwd=cwd, capture_output=False, text=True)
     if result.returncode != 0:
         print(f"Error: Command failed with code {result.returncode}")
         sys.exit(1)
