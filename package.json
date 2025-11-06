@@ -14,6 +14,10 @@
     "2d"
   ],
   "category": "2D",
+  "author": {
+    "name": "Benjamin Halko",
+    "email": "benjamin@benjaminhalko.dev"
+  },
   "dependencies": {},
   "repository": {
     "type": "git",

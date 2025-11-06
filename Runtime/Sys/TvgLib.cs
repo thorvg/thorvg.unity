@@ -338,7 +338,7 @@ namespace Tvg.Sys
 
         public static void Resize(in AnimationHandle handle, int width, int height)
         {
-            Check(ThorVG_Resize(handle.Id, width, height), "Resize");
+            Check(ThorVG_Resize(handle.Id, width, -height), "Resize");
         }
 
         public static void SetCanvasTarget(ref AnimationHandle handle, IntPtr buffer, int w, int h)

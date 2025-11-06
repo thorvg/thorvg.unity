@@ -4,7 +4,6 @@ ThorVG Build Script for Unity
 Builds ThorVG native libraries for different platforms
 
 Usage:
-    python build-thorvg.py              # Build for desktop (current platform)
     python build-thorvg.py desktop      # Build for desktop (current platform)
     python build-thorvg.py ios          # Build for iOS
     python build-thorvg.py android      # Build for Android
@@ -29,6 +28,8 @@ UNITY_PLUGINS = Path("../Plugins")
 COMMON_OPTIONS = [
     "-Dbindings=capi",
     "-Dloaders=lottie,svg,png,jpg,webp",
+    "-Dengines=sw",
+    "-Dsavers=",
     "-Dthreads=false",
     "-Dfile=false",
     "-Dpartial=false",
@@ -208,8 +209,7 @@ def build_desktop():
     build_dir = Path("build/desktop")
     
     # Setup
-    cmd = ["meson", "setup", str(build_dir), str(THORVG_DIR)] + COMMON_OPTIONS + ["--wipe"]
-    run_command(cmd)
+    run_command(["meson", "setup", str(build_dir), str(THORVG_DIR)] + COMMON_OPTIONS + ["--wipe"])
     
     # Compile
     run_command(["meson", "compile", "-C", str(build_dir)])
@@ -248,9 +248,8 @@ def build_ios():
     cross_file = THORVG_DIR / "cross" / "ios_arm64.txt"
     
     # Setup
-    cmd = ["meson", "setup", str(build_dir), str(THORVG_DIR), 
-           f"--cross-file={cross_file}", '-Dstatic=true', '-Ddefault_library=static'] + COMMON_OPTIONS + ["--wipe"]
-    run_command(cmd)
+    run_command(["meson", "setup", str(build_dir), str(THORVG_DIR), 
+           f"--cross-file={cross_file}", '-Dstatic=true', '-Ddefault_library=static'] + COMMON_OPTIONS + ["--wipe"])
     
     # Compile
     run_command(["meson", "compile", "-C", str(build_dir)])
@@ -287,11 +286,9 @@ def build_android():
         build_dir = Path(f"build/android-{arch}")
         
         # Setup
-        cmd = ["meson", "setup", str(build_dir), str(THORVG_DIR),
-               f"--cross-file={cross_file}"] + COMMON_OPTIONS + ["--wipe"]
-        
         try:
-            run_command(cmd)
+            run_command(["meson", "setup", str(build_dir), str(THORVG_DIR),
+               f"--cross-file={cross_file}"] + COMMON_OPTIONS + ["--wipe"])
             
             # Compile
             run_command(["meson", "compile", "-C", str(build_dir)])
@@ -323,37 +320,20 @@ def setup_emsdk():
     return emsdk_dir
 
 def create_wasm_cross_file(emsdk_dir):
-    """Create WASM cross-file with correct emsdk paths"""
-    emsdk_abs = emsdk_dir.resolve()
+    """Create WASM cross-file by replacing EMSDK: placeholder in ThorVG's template"""
+    emsdk_abs = str(emsdk_dir.resolve())
     
-    content = f"""# Auto-generated WASM cross-file
-
-[binaries]
-cpp = '{emsdk_abs}/upstream/emscripten/em++.py'
-ar = '{emsdk_abs}/upstream/emscripten/emar.py'
-strip = '-strip'
-
-[properties]
-root = '{emsdk_abs}/upstream/emscripten/system'
-shared_lib_suffix = 'js'
-static_lib_suffix = 'js'
-shared_module_suffix = 'js'
-exe_suffix = 'js'
-
-[built-in options]
-cpp_args = ['-Wshift-negative-value', '-flto', '-Oz', '-fno-exceptions']
-cpp_link_args = ['-Wshift-negative-value', '-flto', '-Oz', '-fno-exceptions', '--bind', '--closure=1', '-sWASM=1', '-sALLOW_MEMORY_GROWTH=1', '-sEXPORT_ES6=1', '-sFORCE_FILESYSTEM=1', '-sMODULARIZE=1', '-sEXPORTED_RUNTIME_METHODS=FS']
-
-[host_machine]
-system = 'emscripten'
-cpu_family = 'wasm32'
-cpu = 'wasm32'
-endian = 'little'
-"""
+    # Read ThorVG's wasm32_sw.txt template
+    template_file = THORVG_DIR / "cross" / "wasm32_sw.txt"
+    content = template_file.read_text()
     
-    cross_file = Path(".wasm32.cross")
+    # Replace EMSDK: placeholder with actual path (matching ThorVG's wasm_build.sh)
+    content = content.replace("EMSDK:", emsdk_abs + "/")
+    
+    # Write to temp file
+    cross_file = Path(".wasm32_sw.cross")
     cross_file.write_text(content)
-    print(f"✅ Generated WASM cross-file: {cross_file}")
+    print(f"✅ Generated WASM cross-file")
     return cross_file
 
 def build_wasm():
@@ -365,29 +345,18 @@ def build_wasm():
     # Generate WASM cross-file
     emsdk_dir = Path("emsdk")
     cross_file = create_wasm_cross_file(emsdk_dir)
-    emsdk_env_path = emsdk_dir / "emsdk_env.sh"
+
+    wasm_commands = COMMON_OPTIONS.copy()
+    wasm_commands[0] = "-Dbindings=wasm_beta"
+    wasm_commands[1] = "-Dloaders=all"
     
     try:
-        # Build command matching ThorVG's wasm_build.sh
-        meson_cmd = f"meson setup {build_dir} {THORVG_DIR} " \
-                   f"--cross-file={cross_file} " \
-                   f"-Db_lto=true -Ddefault_library=static -Dstatic=true " \
-                   f"-Dloaders=all -Dthreads=false " \
-                   f"-Dbindings=wasm_beta -Dpartial=false -Dfile=false " \
-                   f"-Dbuildtype=release --wipe"
-        
-        # Source emsdk and run meson
-        full_cmd = f"source {emsdk_env_path} && {meson_cmd}"
-        print(f"Running with Emscripten environment...")
-        result = subprocess.run(full_cmd, shell=True, cwd=Path.cwd())
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, full_cmd)
-        
+        # Setup
+        run_command(["meson", "setup", str(build_dir), str(THORVG_DIR),
+               f"--cross-file={cross_file}"] + wasm_commands + ["--wipe"])
+
         # Compile
-        compile_cmd = f"source {emsdk_env_path} && meson compile -C {build_dir}"
-        result = subprocess.run(compile_cmd, shell=True, cwd=Path.cwd())
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, compile_cmd)
+        run_command(["meson", "compile", "-C", str(build_dir)])
         
         # Copy WASM module files to package StreamingAssets
         # Unity will copy these to Build/StreamingAssets/Packages/com.thorvg.unity/WebGL/
@@ -407,10 +376,11 @@ def main():
     """Main entry point"""
     # Parse arguments
     if len(sys.argv) < 2:
-        target = "desktop"
+        print(__doc__)
+        sys.exit(0)
     else:
         target = sys.argv[1].lower()
-    
+
     # Check dependencies (with emsdk for WASM builds)
     need_emsdk = target in ["wasm", "webgl", "all"]
     check_dependencies(need_emsdk=need_emsdk)
