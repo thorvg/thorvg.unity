@@ -16,11 +16,11 @@ namespace Tvg
         
         [SerializeField]
         [Tooltip("Starting frame of the animation")]
-        private float _frame = 0.0f;
+        private float __frame = 0.0f;
         
         [SerializeField]
         [Tooltip("Animation playback speed multiplier")]
-        private float _speed = 1.0f;
+        private float __speed = 1.0f;
 
         private TvgTexture __texture;
         private MeshRenderer __meshRenderer;
@@ -31,20 +31,20 @@ namespace Tvg
 
         public float frame
         {
-            get => __texture?.frame ?? _frame;
+            get => __texture?.frame ?? __frame;
             set
             {
                 if (__texture != null)
                     __texture.frame = value;
                 else
-                    _frame = value;
+                    __frame = value;
             }
         }
 
         public float speed
         {
-            get => _speed;
-            set => _speed = value;
+            get => __speed;
+            set => __speed = value;
         }
 
         private void Start()
@@ -117,7 +117,7 @@ namespace Tvg
                 // Load the texture - ThorVG automatically detects if it's SVG or Lottie
                 __texture = new TvgTexture(dataString);
                 __isAnimated = __texture.totalFrames > 1;
-                __texture.frame = _frame;
+                __texture.frame = __frame;
                 
                 // Create mesh and material
                 SetupMeshAndMaterial();
