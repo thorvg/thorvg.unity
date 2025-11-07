@@ -398,7 +398,7 @@ def build_wasm():
     try:
         # Setup
         run_command(["meson", "setup", str(build_dir), str(THORVG_DIR),
-               f"--cross-file={cross_file}", "-Dstatic=true", "-Ddefault_library=static"] + wasm_commands + ["--wipe"])
+               f"--cross-file={cross_file}"] + wasm_commands + ["--wipe"])
 
         # Compile
         run_command(["meson", "compile", "-C", str(build_dir)])
