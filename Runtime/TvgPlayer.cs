@@ -200,6 +200,7 @@ namespace Tvg
             // Create material with unlit transparent shader
             __material = new Material(Shader.Find("Unlit/Transparent"));
             __material.mainTexture = __texture.Texture();
+            __material.mainTextureScale = new Vector2(1, -1); // Flip texture vertically
             __meshRenderer.material = __material;
         }
 

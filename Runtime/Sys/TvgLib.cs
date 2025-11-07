@@ -142,9 +142,6 @@ namespace Tvg.Sys
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_picture_get_size(IntPtr handle, out float w, out float h);
 
-        [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int tvg_picture_set_origin(IntPtr handle, float x, float y);
-
 /************************************************************************/
 /* Public API                                                           */
 /************************************************************************/
@@ -174,9 +171,6 @@ namespace Tvg.Sys
             // Load the animation data
             Check(tvg_picture_load_data(picture, data, (uint)data.Length, "", "", true), "Picture Load");
             Check(tvg_canvas_push(canvas, picture), "Canvas Push");
-
-            // Position the picture (Unity is Y-up, but ThorVG is Y-down)
-            Check(tvg_picture_set_origin(picture, 0, 1), "Picture Set Origin");
 
             return new AnimationHandle 
             { 
@@ -214,7 +208,7 @@ namespace Tvg.Sys
 
         public static void Resize(in AnimationHandle handle, int width, int height)
         {
-            Check(tvg_picture_set_size(handle.Picture, width, -height), "Picture Set Size");
+            Check(tvg_picture_set_size(handle.Picture, width, height), "Picture Set Size");
         }
 
         public static void SetCanvasTarget(ref AnimationHandle handle, IntPtr buffer, int w, int h)
@@ -338,7 +332,7 @@ namespace Tvg.Sys
 
         public static void Resize(in AnimationHandle handle, int width, int height)
         {
-            Check(ThorVG_Resize(handle.Id, width, -height), "Resize");
+            Check(ThorVG_Resize(handle.Id, width, height), "Resize");
         }
 
         public static void SetCanvasTarget(ref AnimationHandle handle, IntPtr buffer, int w, int h)
