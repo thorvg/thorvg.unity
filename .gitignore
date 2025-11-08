@@ -2,3 +2,4 @@
 Scripts~/build*/
 Scripts~/thorvg*/
 Scripts~/emsdk*/
+*.meta
