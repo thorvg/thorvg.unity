@@ -1,4 +1,4 @@
 .DS_Store
-Scripts~/build*/
-Scripts~/thorvg*/
-Scripts~/emsdk*/
+scripts/build*/
+scripts/thorvg*/
+scripts/emsdk*/

@@ -21,8 +21,8 @@ from pathlib import Path
 # Configuration
 THORVG_TAG = "v1.0-pre31"
 THORVG_REPO = "https://github.com/thorvg/thorvg.git"
-THORVG_DIR = Path(f'thorvg-{THORVG_TAG}')
-UNITY_PLUGINS = Path("../Plugins")
+THORVG_DIR = Path(__file__).parent / f'thorvg-{THORVG_TAG}'
+UNITY_PLUGINS = Path(__file__).parent.parent / "package" / "Plugins"
 
 # Common meson options
 COMMON_OPTIONS = [

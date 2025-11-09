@@ -19,7 +19,7 @@ ThorVG Unity supports Lottie animations, enabling seamless integration of vector
 4. Enter:
 
 ```bash
-https://github.com/thorvg/thorvg.unity.git
+https://github.com/thorvg/thorvg.unity.git?path=/package
 ```
 
 ## Quick Start
@@ -53,7 +53,7 @@ https://github.com/thorvg/thorvg.unity.git
 ## Building ThorVG
 
 ```bash
-cd Scripts~
+cd scripts
 python3 build-thorvg.py
 ```
 
