@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: brew install meson ninja
+
       - name: Build macOS
         working-directory: scripts
         run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
@@ -39,6 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: pip3 install meson ninja
+
       - name: Build Windows
         working-directory: scripts
         run: python build-thorvg.py ${{ inputs.thorvg_tag }} desktop
@@ -53,6 +59,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson ninja
 
       - name: Build Linux
         working-directory: scripts
