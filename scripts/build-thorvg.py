@@ -349,38 +349,19 @@ def build_android():
     print("\n[OK] All Android architectures built")
 
 
-def find_emsdk_root():
-    """Find emsdk root directory from PATH or local installation"""
-    # First check if emcc is in PATH (e.g., from GitHub Actions setup-emsdk)
-    emcc_path = shutil.which("emcc")
-    if emcc_path:
-        # emcc is at <emsdk>/upstream/emscripten/emcc
-        emsdk_root = Path(emcc_path).resolve().parent.parent.parent
-        print(f"[OK] Found emsdk from PATH: {emsdk_root}")
-        return emsdk_root
-
-    # Fall back to local emsdk directory
-    local_emsdk = Path("emsdk")
-    if local_emsdk.exists():
-        print(f"[OK] Using local emsdk: {local_emsdk.resolve()}")
-        return local_emsdk.resolve()
-
-    raise RuntimeError(
-        "emsdk not found in PATH. Run setup_emsdk() first or ensure emcc is in PATH."
-    )
-
-
 def create_wasm_cross_file():
     """Create WASM cross-file by replacing EMSDK: placeholder in ThorVG's template"""
-    emsdk_root = find_emsdk_root()
-    emsdk_abs = str(emsdk_root)
+    emsdk_root = Path(os.environ.get("EMSDK", ""))
+    if not emsdk_root.exists():
+        print("[ERROR] EMSDK not found! Set the EMSDK variable")
+        return None
 
     # Read ThorVG's wasm32_sw.txt template
     template_file = THORVG_DIR / "cross" / "wasm32_sw.txt"
     content = template_file.read_text()
 
     # Replace EMSDK: placeholder with actual path (matching ThorVG's wasm_build.sh)
-    content = content.replace("EMSDK:", emsdk_abs + "/")
+    content = content.replace("EMSDK:", str(emsdk_root) + "/")
 
     # Write to temp file
     cross_file = Path(".wasm32_sw.cross")
@@ -395,8 +376,10 @@ def build_wasm():
 
     build_dir = Path("build/wasm")
 
-    # Generate WASM cross-file (finds emsdk from PATH or local install)
+    # Generate WASM cross-file
     cross_file = create_wasm_cross_file()
+    if cross_file is None:
+        return
 
     wasm_commands = COMMON_OPTIONS.copy()
     wasm_commands[0] = "-Dbindings=wasm_beta"
