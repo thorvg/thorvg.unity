@@ -182,9 +182,9 @@ jobs:
 
           TAG="${{ inputs.thorvg_tag }}"
           BRANCH_NAME="thorvg-$TAG"
-          git checkout -b "$BRANCH_NAME"
+          git checkout -B "$BRANCH_NAME"
 
           git add package/
           git commit -m "Update ThorVG binaries to $TAG"
 
-          git push origin "$BRANCH_NAME"
+          git push --force origin "$BRANCH_NAME"
