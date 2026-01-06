@@ -510,7 +510,7 @@ def build_wasm():
 
         # Copy WASM module files to package StreamingAssets
         # Unity will copy these to Build/StreamingAssets/Packages/com.thorvg.unity/WebGL/
-        output_dir = Path("../StreamingAssets/WebGL")
+        output_dir = Path("../package/StreamingAssets/WebGL")
         output_dir.mkdir(parents=True, exist_ok=True)
 
         wasm_output = build_dir / "src" / "bindings" / "wasm"
