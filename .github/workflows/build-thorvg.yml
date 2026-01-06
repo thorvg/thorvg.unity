@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install meson
-          brew uninstall libpng libturbojpeg
+          brew uninstall libpng jpeg-turbo
 
       - name: Build macOS
         working-directory: scripts
@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install meson
-          brew uninstall libpng libturbojpeg
+          brew uninstall libpng jpeg-turbo
 
       - name: Build iOS
         working-directory: scripts
