@@ -1,7 +1,7 @@
 {
   "name": "com.thorvg.unity",
   "displayName": "ThorVG",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "unity": "2021.3",
   "description": "ThorVG Unity supports Lottie animations, enabling seamless integration of vector-based animations in Unity projects.",
   "keywords": [
