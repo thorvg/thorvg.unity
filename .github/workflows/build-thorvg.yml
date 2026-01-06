@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Windows
         working-directory: scripts
-        run: python build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
