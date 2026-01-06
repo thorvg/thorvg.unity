@@ -455,6 +455,26 @@ def create_wasm_cross_file(emsdk_dir):
     return cross_file
 
 
+def run_command_with_emsdk(cmd, emsdk_dir):
+    """Run a command with emsdk environment sourced"""
+    if platform.system() == "Windows":
+        # Windows: use emsdk_env.bat
+        env_script = emsdk_dir / "emsdk_env.bat"
+        full_cmd = f'call "{env_script}" && {" ".join(cmd)}'
+        print(f"Running: {' '.join(cmd)}")
+        result = subprocess.run(full_cmd, shell=True, text=True)
+    else:
+        # Unix: source emsdk_env.sh
+        env_script = emsdk_dir / "emsdk_env.sh"
+        full_cmd = f'source "{env_script}" && {" ".join(cmd)}'
+        print(f"Running: {' '.join(cmd)}")
+        result = subprocess.run(full_cmd, shell=True, text=True, executable="/bin/bash")
+
+    if result.returncode != 0:
+        print(f"Error: Command failed with code {result.returncode}")
+        sys.exit(1)
+
+
 def build_wasm():
     """Build WASM module using Emscripten"""
     print("\n=== Building for WebGL ===")
@@ -470,8 +490,8 @@ def build_wasm():
     wasm_commands[1] = "-Dloaders=all"
 
     try:
-        # Setup
-        run_command(
+        # Setup (with emsdk environment)
+        run_command_with_emsdk(
             [
                 "meson",
                 "setup",
@@ -480,11 +500,12 @@ def build_wasm():
                 f"--cross-file={cross_file}",
             ]
             + wasm_commands
-            + ["--wipe"]
+            + ["--wipe"],
+            emsdk_dir,
         )
 
-        # Compile
-        run_command(["meson", "compile", "-C", str(build_dir)])
+        # Compile (with emsdk environment)
+        run_command_with_emsdk(["meson", "compile", "-C", str(build_dir)], emsdk_dir)
 
         # Copy WASM module files to package StreamingAssets
         # Unity will copy these to Build/StreamingAssets/Packages/com.thorvg.unity/WebGL/
