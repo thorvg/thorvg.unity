@@ -312,7 +312,7 @@ def build_desktop():
         # Windows
         output_dir = UNITY_PLUGINS / "x86_64"
         output_file = "libthorvg.dll"
-        source = build_dir / "src" / "thorvg-1.dll"
+        source = build_dir / "src" / "libthorvg-1.dll"
     else:
         # Linux
         output_dir = UNITY_PLUGINS / "x86_64"
