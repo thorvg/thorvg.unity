@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-binary
-          path: package/Plugins/arm64/libthorvg.a
+          path: package/Plugins/iOS/arm64/libthorvg.a
 
   build-windows:
     runs-on: windows-latest
