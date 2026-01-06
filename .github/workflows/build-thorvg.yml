@@ -1,0 +1,179 @@
+name: Build ThorVG Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      thorvg_tag:
+        description: "ThorVG tag to build"
+        required: true
+        type: string
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install meson
+
+      - name: Build macOS
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binary
+          path: package/Plugins/macOS/libthorvg.dylib
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install meson
+
+      - name: Build iOS
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} ios
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-binary
+          path: package/Plugins/iOS/arm64/libthorvg.a
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson
+
+      - name: Build Windows
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: package/Plugins/x86_64/libthorvg.dll
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson
+
+      - name: Build Linux
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: package/Plugins/x86_64/libthorvg.so
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson
+
+      - name: Build Android
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} android
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-binary
+          path: |
+            package/Plugins/Android/
+            !package/Plugins/Android/*.meta
+            !package/Plugins/Android/**/*.meta
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson
+
+      - name: Cache Emsdk
+        uses: actions/cache@v4
+        with:
+          path: emsdk-cache
+          key: emsdk-4.0.0
+
+      - name: Setup Emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.0
+          actions-cache-folder: emsdk-cache
+
+      - name: Build WASM
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} wasm
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-binary
+          path: |
+            package/StreamingAssets/WebGL/
+            !package/StreamingAssets/WebGL/*.meta
+
+  create-branch:
+    needs:
+      [
+        build-macos,
+        build-ios,
+        build-windows,
+        build-linux,
+        build-android,
+        build-wasm,
+      ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Copy binaries to package
+        run: |
+          cp artifacts/macos-binary/libthorvg.dylib package/Plugins/macOS/
+          cp artifacts/ios-binary/libthorvg.a package/Plugins/iOS/arm64/
+          cp artifacts/windows-binary/libthorvg.dll package/Plugins/x86_64/
+          cp artifacts/linux-binary/libthorvg.so package/Plugins/x86_64/
+          cp -r artifacts/android-binary/* package/Plugins/Android/
+          cp artifacts/wasm-binary/thorvg.js artifacts/wasm-binary/thorvg.wasm package/StreamingAssets/WebGL/
+
+      - name: Create branch and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          TAG="${{ inputs.thorvg_tag }}"
+          BRANCH_NAME="thorvg-$TAG"
+          git checkout -B "$BRANCH_NAME"
+
+          git add package/
+          git commit -m "Update ThorVG binaries to $TAG"
+
+          git push --force origin "$BRANCH_NAME"
