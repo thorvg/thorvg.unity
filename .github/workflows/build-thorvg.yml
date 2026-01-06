@@ -1,0 +1,147 @@
+name: Build ThorVG Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      thorvg_tag:
+        description: "ThorVG tag to build (e.g., v1.0, v1.0-pre34)"
+        required: true
+        type: string
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson ninja
+
+      - name: Build macOS
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Build iOS
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} ios
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binary
+          path: package/Plugins/macOS/
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-binary
+          path: package/Plugins/iOS/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install meson ninja
+
+      - name: Build Windows
+        working-directory: scripts
+        run: python build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: package/Plugins/x86_64/libthorvg.dll
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip3 install meson ninja
+
+      - name: Build Linux
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} desktop
+
+      - name: Build Android
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} android
+
+      - name: Build WASM
+        working-directory: scripts
+        run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} wasm
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: package/Plugins/x86_64/libthorvg.so
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-binary
+          path: package/Plugins/Android/
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-binary
+          path: StreamingAssets/WebGL/
+
+  create-branch:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Copy binaries to package
+        run: |
+          # macOS
+          mkdir -p package/Plugins/macOS
+          cp -r artifacts/macos-binary/* package/Plugins/macOS/
+
+          # iOS
+          mkdir -p package/Plugins/iOS
+          cp -r artifacts/ios-binary/* package/Plugins/iOS/
+
+          # Windows
+          mkdir -p package/Plugins/x86_64
+          cp artifacts/windows-binary/libthorvg.dll package/Plugins/x86_64/
+
+          # Linux
+          cp artifacts/linux-binary/libthorvg.so package/Plugins/x86_64/
+
+          # Android
+          mkdir -p package/Plugins/Android
+          cp -r artifacts/android-binary/* package/Plugins/Android/
+
+          # WASM
+          mkdir -p StreamingAssets/WebGL
+          cp -r artifacts/wasm-binary/* StreamingAssets/WebGL/
+
+      - name: Create branch and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH_NAME="thorvg-${{ inputs.thorvg_tag }}"
+          git checkout -b "$BRANCH_NAME"
+
+          git add package/Plugins/ StreamingAssets/
+          git commit -m "Update ThorVG binaries to ${{ inputs.thorvg_tag }}"
+
+          git push origin "$BRANCH_NAME"
+
+          echo "Created branch: $BRANCH_NAME"
