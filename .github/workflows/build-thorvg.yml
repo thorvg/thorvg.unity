@@ -107,11 +107,17 @@ jobs:
       - name: Install dependencies
         run: pip3 install meson
 
-      - name: Cache emsdk
-        uses: actions/cache@v4
+      - name: Cache Emsdk
+        uses: actions/cache@v2
         with:
-          path: scripts/emsdk
+          path: emsdk-cache
           key: emsdk-4.0.0
+
+      - name: Setup Emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.0
+          actions-cache-folder: emsdk-cache
 
       - name: Build WASM
         working-directory: scripts

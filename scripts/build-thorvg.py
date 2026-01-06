@@ -8,11 +8,9 @@ Usage:
     python build-thorvg.py <tag> ios          # Build for iOS
     python build-thorvg.py <tag> android      # Build for Android
     python build-thorvg.py <tag> wasm         # Build for WebGL
-    python build-thorvg.py <tag> all          # Build for all platforms
 
 Examples:
-    python build-thorvg.py v1.0 desktop
-    python build-thorvg.py v1.0-pre34 all
+    python build-thorvg.py v1.0-pre34 desktop
 """
 
 import argparse
@@ -46,7 +44,7 @@ COMMON_OPTIONS = [
 ]
 
 
-def check_dependencies(need_emsdk=False):
+def check_dependencies():
     """Check if required build tools are installed"""
     # Check for meson
     try:
@@ -90,29 +88,6 @@ def check_dependencies(need_emsdk=False):
         )
     else:
         print("[OK] ThorVG found")
-
-    # Setup emsdk if needed for WASM builds
-    if need_emsdk:
-        emsdk_dir = Path("emsdk")
-        if not emsdk_dir.exists():
-            print("Downloading emsdk...")
-            run_command(
-                [
-                    "git",
-                    "clone",
-                    "https://github.com/emscripten-core/emsdk.git",
-                    str(emsdk_dir),
-                ]
-            )
-        else:
-            print("[OK] emsdk found")
-
-        # Install and activate Emscripten 4.0.0
-        emsdk_script = "emsdk.bat" if platform.system() == "Windows" else "./emsdk"
-        print("Installing Emscripten 4.0.0...")
-        run_command([emsdk_script, "install", "4.0.0"], cwd=emsdk_dir)
-        run_command([emsdk_script, "activate", "4.0.0"], cwd=emsdk_dir)
-        print("[OK] Emscripten 4.0.0 activated")
 
 
 def run_command(cmd, cwd=None):
@@ -301,7 +276,6 @@ def build_ios():
             str(build_dir),
             str(THORVG_DIR),
             f"--cross-file={cross_file}",
-            "-Dstatic=true",
             "-Ddefault_library=static",
         ]
         + COMMON_OPTIONS
@@ -375,29 +349,31 @@ def build_android():
     print("\n[OK] All Android architectures built")
 
 
-def setup_emsdk():
-    """Setup Emscripten SDK"""
-    emsdk_dir = Path("emsdk")
+def find_emsdk_root():
+    """Find emsdk root directory from PATH or local installation"""
+    # First check if emcc is in PATH (e.g., from GitHub Actions setup-emsdk)
+    emcc_path = shutil.which("emcc")
+    if emcc_path:
+        # emcc is at <emsdk>/upstream/emscripten/emcc
+        emsdk_root = Path(emcc_path).resolve().parent.parent.parent
+        print(f"[OK] Found emsdk from PATH: {emsdk_root}")
+        return emsdk_root
 
-    if not emsdk_dir.exists():
-        print("Downloading emsdk...")
-        run_command(
-            [
-                "git",
-                "clone",
-                "https://github.com/emscripten-core/emsdk.git",
-                str(emsdk_dir),
-            ]
-        )
-    else:
-        print("[OK] emsdk already exists")
+    # Fall back to local emsdk directory
+    local_emsdk = Path("emsdk")
+    if local_emsdk.exists():
+        print(f"[OK] Using local emsdk: {local_emsdk.resolve()}")
+        return local_emsdk.resolve()
 
-    return emsdk_dir
+    raise RuntimeError(
+        "emsdk not found in PATH. Run setup_emsdk() first or ensure emcc is in PATH."
+    )
 
 
-def create_wasm_cross_file(emsdk_dir):
+def create_wasm_cross_file():
     """Create WASM cross-file by replacing EMSDK: placeholder in ThorVG's template"""
-    emsdk_abs = str(emsdk_dir.resolve())
+    emsdk_root = find_emsdk_root()
+    emsdk_abs = str(emsdk_root)
 
     # Read ThorVG's wasm32_sw.txt template
     template_file = THORVG_DIR / "cross" / "wasm32_sw.txt"
@@ -413,43 +389,21 @@ def create_wasm_cross_file(emsdk_dir):
     return cross_file
 
 
-def run_command_with_emsdk(cmd, emsdk_dir):
-    """Run a command with emsdk environment sourced"""
-    if platform.system() == "Windows":
-        # Windows: use emsdk_env.bat
-        env_script = emsdk_dir / "emsdk_env.bat"
-        full_cmd = f'call "{env_script}" && {" ".join(cmd)}'
-        print(f"Running: {' '.join(cmd)}")
-        result = subprocess.run(full_cmd, shell=True, text=True)
-    else:
-        # Unix: source emsdk_env.sh
-        env_script = emsdk_dir / "emsdk_env.sh"
-        full_cmd = f'source "{env_script}" && {" ".join(cmd)}'
-        print(f"Running: {' '.join(cmd)}")
-        result = subprocess.run(full_cmd, shell=True, text=True, executable="/bin/bash")
-
-    if result.returncode != 0:
-        print(f"Error: Command failed with code {result.returncode}")
-        sys.exit(1)
-
-
 def build_wasm():
     """Build WASM module using Emscripten"""
     print("\n=== Building for WebGL ===")
 
     build_dir = Path("build/wasm")
 
-    # Generate WASM cross-file
-    emsdk_dir = Path("emsdk")
-    cross_file = create_wasm_cross_file(emsdk_dir)
+    # Generate WASM cross-file (finds emsdk from PATH or local install)
+    cross_file = create_wasm_cross_file()
 
     wasm_commands = COMMON_OPTIONS.copy()
     wasm_commands[0] = "-Dbindings=wasm_beta"
     wasm_commands[1] = "-Dloaders=all"
 
     try:
-        # Setup (with emsdk environment)
-        run_command_with_emsdk(
+        run_command(
             [
                 "meson",
                 "setup",
@@ -460,11 +414,10 @@ def build_wasm():
             ]
             + wasm_commands
             + ["--wipe"],
-            emsdk_dir,
         )
 
-        # Compile (with emsdk environment)
-        run_command_with_emsdk(["meson", "compile", "-C", str(build_dir)], emsdk_dir)
+        # Compile
+        run_command(["meson", "compile", "-C", str(build_dir)])
 
         # Copy WASM module files to package StreamingAssets
         # Unity will copy these to Build/StreamingAssets/Packages/com.thorvg.unity/WebGL/
@@ -490,19 +443,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python build-thorvg.py v1.0 desktop
-    python build-thorvg.py v1.0-pre34 all
-    python build-thorvg.py v1.0 android ios
+    python build-thorvg.py v1.0-pre34 desktop
+    python build-thorvg.py v1.0-pre34 android ios
         """,
     )
     parser.add_argument(
         "tag",
-        help="ThorVG git tag to build (e.g., v1.0, v1.0-pre34)",
+        help="ThorVG git tag to build (v1.0-pre34)",
     )
     parser.add_argument(
         "targets",
         nargs="+",
-        choices=["desktop", "ios", "android", "wasm", "webgl", "web", "all"],
+        choices=["desktop", "ios", "android", "wasm", "webgl", "web"],
         help="Build target(s)",
     )
 
@@ -516,17 +468,13 @@ Examples:
     targets = set()
     for t in args.targets:
         t = t.lower()
-        if t == "all":
-            targets = {"desktop", "ios", "android", "wasm"}
-            break
-        elif t in ["wasm", "webgl", "web"]:
+        if t in ["wasm", "webgl", "web"]:
             targets.add("wasm")
         else:
             targets.add(t)
 
-    # Check dependencies (with emsdk for WASM builds)
-    need_emsdk = "wasm" in targets
-    check_dependencies(need_emsdk=need_emsdk)
+    # Check dependencies
+    check_dependencies()
 
     # Build each target
     for target in targets:
