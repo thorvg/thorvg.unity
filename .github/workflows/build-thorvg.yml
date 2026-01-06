@@ -15,7 +15,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install meson
+        run: |
+          brew install meson
+          brew uninstall libpng libturbojpeg
 
       - name: Build macOS
         working-directory: scripts
@@ -33,7 +35,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install meson
+        run: |
+          brew install meson
+          brew uninstall libpng libturbojpeg
 
       - name: Build iOS
         working-directory: scripts
@@ -107,6 +111,12 @@ jobs:
       - name: Install dependencies
         run: pip3 install meson
 
+      - name: Cache emsdk
+        uses: actions/cache@v4
+        with:
+          path: scripts/emsdk
+          key: emsdk-4.0.0
+
       - name: Build WASM
         working-directory: scripts
         run: python3 build-thorvg.py ${{ inputs.thorvg_tag }} wasm
@@ -176,5 +186,3 @@ jobs:
           git commit -m "Update ThorVG binaries to $TAG"
 
           git push origin "$BRANCH_NAME"
-
-          echo "Created branch: $BRANCH_NAME"
