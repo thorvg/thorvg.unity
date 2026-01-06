@@ -41,6 +41,7 @@ COMMON_OPTIONS = [
     "-Dfile=false",
     "-Dpartial=false",
     "-Dextra=",
+    "-Dstatic",
     "-Dbuildtype=release",
 ]
 
