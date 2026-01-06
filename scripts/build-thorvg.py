@@ -432,7 +432,7 @@ Examples:
     )
     parser.add_argument(
         "tag",
-        help="ThorVG git tag to build (v1.0-pre34)",
+        help="ThorVG git tag to build",
     )
     parser.add_argument(
         "targets",
