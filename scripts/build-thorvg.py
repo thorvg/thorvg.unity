@@ -10,7 +10,7 @@ Usage:
     python build-thorvg.py <tag> wasm         # Build for WebGL
 
 Examples:
-    python build-thorvg.py v1.0-pre34 desktop
+    python build-thorvg.py v1.0.0 desktop
 """
 
 import argparse
@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Configuration
 THORVG_REPO = "https://github.com/thorvg/thorvg.git"
-UNITY_PLUGINS = Path(__file__).parent.parent / "package" / "Plugins"
+UNITY_PLUGINS = (Path(__file__).parent.parent.parent / "package" / "Plugins").resolve()
 
 # These will be set based on CLI arguments
 THORVG_TAG = ""
@@ -42,6 +42,9 @@ COMMON_OPTIONS = [
     "-Dstatic=true",
     "-Dbuildtype=release",
 ]
+
+# Set working directory
+os.chdir(Path(__file__).parent.resolve())
 
 
 def check_dependencies():
@@ -218,6 +221,44 @@ endian = 'little'
     return cross_file
 
 
+def find_built_library(build_dir, extension):
+    """Auto-find the built ThorVG library, skipping symlinks.
+
+    Searches build_dir/src/ for real (non-symlink) files containing
+    'thorvg' with the given extension.
+
+    Args:
+        build_dir: The meson build directory.
+        extension: Extension to match within the filename (e.g. '.dylib').
+
+    Returns:
+        Path to the found library file.
+    """
+    search_dir = build_dir / "src"
+    matches = [
+        f
+        for f in search_dir.rglob("*")
+        if not f.is_dir()
+        and not f.is_symlink()
+        and "thorvg" in f.name
+        and extension in f.name
+    ]
+
+    if not matches:
+        print(f"[ERROR] No ThorVG library (*thorvg*{extension}) found in {search_dir}")
+        if search_dir.exists():
+            print("  Available files:")
+            for f in sorted(search_dir.rglob("*")):
+                if not f.is_dir():
+                    sym = " (symlink)" if f.is_symlink() else ""
+                    print(f"    {f.relative_to(build_dir)}{sym}")
+        sys.exit(1)
+
+    result = sorted(matches)[0]
+    print(f"  Found: {result.relative_to(build_dir)}")
+    return result
+
+
 def build_desktop():
     """Build for current desktop platform (macOS, Windows, Linux)"""
     print("\n=== Building for Desktop ===")
@@ -235,26 +276,23 @@ def build_desktop():
     # Compile
     run_command(["meson", "compile", "-C", str(build_dir)])
 
-    # Copy to appropriate plugin folder
+    # Auto-find built library and copy to plugin folder
     if system == "Darwin":
-        # macOS
+        source = find_built_library(build_dir, ".dylib")
         output_dir = UNITY_PLUGINS / "macOS"
-        output_file = "libthorvg.dylib"
-        source = build_dir / "src" / output_file
+        dest_name = "libthorvg.dylib"
     elif system == "Windows":
-        # Windows
+        source = find_built_library(build_dir, ".dll")
         output_dir = UNITY_PLUGINS / "x86_64"
-        output_file = "libthorvg.dll"
-        source = build_dir / "src" / "libthorvg-1.dll"
+        dest_name = "libthorvg.dll"
     else:
-        # Linux
+        source = find_built_library(build_dir, ".so")
         output_dir = UNITY_PLUGINS / "x86_64"
-        output_file = "libthorvg.so"
-        source = build_dir / "src" / output_file
+        dest_name = "libthorvg.so"
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, output_dir / output_file)
-    print(f"[OK] Desktop build copied to {output_dir / output_file}")
+    shutil.copy2(source, output_dir / dest_name)
+    print(f"[OK] Desktop build copied to {output_dir / dest_name}")
 
 
 def build_ios():
@@ -285,11 +323,11 @@ def build_ios():
     # Compile
     run_command(["meson", "compile", "-C", str(build_dir)])
 
-    # Copy to Unity plugins
+    # Auto-find and copy to Unity plugins
+    source = find_built_library(build_dir, ".a")
     output_dir = UNITY_PLUGINS / "iOS" / "arm64"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    source = build_dir / "src" / "libthorvg.a"
     shutil.copy2(source, output_dir / "libthorvg.a")
     print(f"[OK] iOS build copied to {output_dir / 'libthorvg.a'}")
 
@@ -334,11 +372,11 @@ def build_android():
             # Compile
             run_command(["meson", "compile", "-C", str(build_dir)])
 
-            # Copy to Unity plugins
+            # Auto-find and copy to Unity plugins
+            source = find_built_library(build_dir, ".so")
             output_dir = UNITY_PLUGINS / "Android" / "libs" / arch
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            source = build_dir / "src" / "libthorvg.so"
             shutil.copy2(source, output_dir / "libthorvg.so")
             print(f"[OK] {arch} build copied to {output_dir / 'libthorvg.so'}")
         finally:
@@ -407,14 +445,18 @@ def build_wasm():
         # Compile
         run_command(["meson", "compile", "-C", str(build_dir)])
 
-        # Copy WASM module files to package StreamingAssets
+        # Auto-find and copy WASM module files to package StreamingAssets
         # Unity will copy these to Build/StreamingAssets/Packages/com.thorvg.unity/WebGL/
-        output_dir = Path(__file__).parent.parent / "package" / "StreamingAssets" / "WebGL"
+        js_source = find_built_library(build_dir, ".js")
+        wasm_source = find_built_library(build_dir, ".wasm")
+
+        output_dir = (
+            Path(__file__).parent.parent / "package" / "StreamingAssets" / "WebGL"
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        wasm_output = build_dir / "src" / "bindings" / "wasm"
-        shutil.copy2(wasm_output / "thorvg.js", output_dir / "thorvg.js")
-        shutil.copy2(wasm_output / "thorvg.wasm", output_dir / "thorvg.wasm")
+        shutil.copy2(js_source, output_dir / "thorvg.js")
+        shutil.copy2(wasm_source, output_dir / "thorvg.wasm")
         print(f"[OK] WebGL module copied to {output_dir}")
     finally:
         # Clean up
@@ -450,7 +492,7 @@ Examples:
 
     # Set global configuration based on tag
     THORVG_TAG = args.tag
-    THORVG_DIR = Path(__file__).parent / f"thorvg-{THORVG_TAG}"
+    THORVG_DIR = Path(f"thorvg-{THORVG_TAG}")
 
     # Normalize targets
     targets = set()
