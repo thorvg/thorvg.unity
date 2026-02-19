@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Configuration
 THORVG_REPO = "https://github.com/thorvg/thorvg.git"
-UNITY_PLUGINS = (Path(__file__).parent.parent.parent / "package" / "Plugins").resolve()
+UNITY_PLUGINS = (Path(__file__).parent.parent / "package" / "Plugins").resolve()
 
 # These will be set based on CLI arguments
 THORVG_TAG = ""
@@ -473,8 +473,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python build-thorvg.py v1.0-pre34 desktop
-    python build-thorvg.py v1.0-pre34 android ios
+    python build-thorvg.py v1.0.0 desktop
+    python build-thorvg.py v1.0.0 android ios
         """,
     )
     parser.add_argument(
