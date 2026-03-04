@@ -1,5 +1,5 @@
 ## Project Lead
-- Hermet Park <hermetpark@gmail.com>
+- Hermet Park @hermet
 
 ## Maintainer
-- Benjamin <benjamin@benjaminhalko.dev>
+- Benjamin Halko @BenjaminHalko
