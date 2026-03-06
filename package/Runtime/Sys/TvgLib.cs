@@ -30,48 +30,48 @@ namespace Tvg.Sys
     {
         private enum Result
         {
-                Success = 0,
-                InvalidArguments,
-                InsufficientCondition,
-                FailedAllocation,
-                MemoryCorruption,
-                NonSupport,
-                Unknown = 255
+            Success = 0,
+            InvalidArguments,
+            InsufficientCondition,
+            FailedAllocation,
+            MemoryCorruption,
+            NonSupport,
+            Unknown = 255
         }
 
         private enum ColorSpace
         {
-                Abgr8888 = 0
+            Abgr8888 = 0
         }
 
         private enum EngineOption
         {
-                // No special features
-                None = 0
+            // No special features
+            None = 0
         }
 
         private static void Check(int code, string msg)
         {
-            switch ((TvgLib.Result)code)
+            switch ((Result)code)
             {
-                case TvgLib.Result.Success:
+                case Result.Success:
                     return;
-                case TvgLib.Result.InvalidArguments:
+                case Result.InvalidArguments:
                     msg += " (Invalid Arguments)";
                     break;
-                case TvgLib.Result.InsufficientCondition:
+                case Result.InsufficientCondition:
                     msg += " (Insufficient Condition)";
                     break;
-                case TvgLib.Result.FailedAllocation:
+                case Result.FailedAllocation:
                     msg += " (Failed Allocation)";
                     break;
-                case TvgLib.Result.MemoryCorruption:
+                case Result.MemoryCorruption:
                     msg += " (Memory Corruption)";
                     break;
-                case TvgLib.Result.NonSupport:
+                case Result.NonSupport:
                     msg += " (Non Support)";
                     break;
-                case TvgLib.Result.Unknown:
+                case Result.Unknown:
                     msg += " (Unknown)";
                     break;
                 default:
@@ -94,9 +94,9 @@ namespace Tvg.Sys
             public IntPtr Picture;
         }
 
-/************************************************************************/
-/* Engine API                                                           */
-/************************************************************************/
+        /************************************************************************/
+        /* Engine API                                                           */
+        /************************************************************************/
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_engine_init(int threads);
@@ -104,9 +104,9 @@ namespace Tvg.Sys
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_engine_term();
 
-/************************************************************************/
-/* Canvas API                                                           */
-/************************************************************************/
+        /************************************************************************/
+        /* Canvas API                                                           */
+        /************************************************************************/
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tvg_swcanvas_create(EngineOption option);
@@ -115,7 +115,7 @@ namespace Tvg.Sys
         private static extern int tvg_canvas_destroy(IntPtr handle);
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int tvg_canvas_push(IntPtr handle, IntPtr paint);
+        private static extern int tvg_canvas_add(IntPtr handle, IntPtr paint);
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_swcanvas_set_target(IntPtr handle, IntPtr buffer, uint stride, uint w, uint h, ColorSpace colorspace);
@@ -129,9 +129,9 @@ namespace Tvg.Sys
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_canvas_draw(IntPtr handle, bool clear);
 
-/************************************************************************/
-/* Animation API                                                        */
-/************************************************************************/
+        /************************************************************************/
+        /* Animation API                                                        */
+        /************************************************************************/
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tvg_animation_new();
@@ -151,9 +151,9 @@ namespace Tvg.Sys
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tvg_animation_get_picture(IntPtr handle);
 
-/************************************************************************/
-/* Picture API                                                          */
-/************************************************************************/
+        /************************************************************************/
+        /* Picture API                                                          */
+        /************************************************************************/
 
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_picture_load_data(IntPtr handle, string data, uint size, string mimetype, string rpath, bool copy);
@@ -164,9 +164,9 @@ namespace Tvg.Sys
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tvg_picture_get_size(IntPtr handle, out float w, out float h);
 
-/************************************************************************/
-/* Public API                                                           */
-/************************************************************************/
+        /************************************************************************/
+        /* Public API                                                           */
+        /************************************************************************/
 
         public static void EngineInit()
         {
@@ -192,7 +192,7 @@ namespace Tvg.Sys
 
             // Load the animation data
             Check(tvg_picture_load_data(picture, data, (uint)data.Length, "", "", true), "Picture Load");
-            Check(tvg_canvas_push(canvas, picture), "Canvas Push");
+            Check(tvg_canvas_add(canvas, picture), "Canvas Add");
 
             return new AnimationHandle
             {
