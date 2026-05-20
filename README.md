@@ -5,7 +5,7 @@
 
 # ThorVG Unity
 <p align="center">
-  <img width="800" height="auto" src="https://github.com/thorvg/thorvg.site/blob/main/readme/logo/512/thorvg-banner.png">
+  <img width="550" height="auto" src="https://github.com/thorvg/thorvg.site/blob/main/readme/logo/animated_brand.svg">
 </p>
 ThorVG Unity supports Lottie animations, enabling seamless integration of vector-based animations in Unity projects.
 
