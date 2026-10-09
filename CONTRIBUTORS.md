@@ -5,5 +5,5 @@ For definitions and responsibilities of each project role, see [Roles & Responsi
 ## Project Lead
 - Hermet Park @hermet
 
-## Maintainer
+## Core Contributor
 - Benjamin Halko @BenjaminHalko
